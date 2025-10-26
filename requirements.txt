@@ -1,0 +1,9 @@
+google-generativeai
+smolagents[openai]
+chromadb
+python-dotenv
+ddgs
+flask
+flask-cors
+elevenlabs
+numpy

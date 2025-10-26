@@ -1,0 +1,93 @@
+# ===================================
+# Python Flask .gitignore Template
+# ===================================
+
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Virtual environments
+venv/
+env/
+.venv/
+ENV/
+env.bak/
+
+# Flask instance folder
+instance/
+*.db
+*.sqlite3
+
+# Environment variables and configuration
+*.env
+.env.*
+!example.env  # Keep example environment file (optional)
+config.py
+config_local.py
+
+# Logs and debug files
+*.log
+*.pot
+*.mo
+*.pyc
+*.pyo
+*.pyd
+
+# Unit test / coverage reports
+htmlcov/
+.tox/
+.nox/
+.coverage
+.coverage.*
+.cache
+nosetests.xml
+coverage.xml
+*.cover
+*.py,cover
+.pytest_cache/
+test-results/
+
+# Jupyter notebooks
+.ipynb_checkpoints/
+
+# IDE / Editor files
+.vscode/
+.idea/
+*.swp
+*.swo
+*.bak
+
+# macOS
+.DS_Store
+
+# Distribution / packaging
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+share/python-wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+MANIFEST
+
+# Celery beat schedule file
+celerybeat-schedule
+
+# Static and media files (if generated)
+staticfiles/
+media/
+
+# Migrations (optional — if you regenerate them often)
+#migrations/
+
