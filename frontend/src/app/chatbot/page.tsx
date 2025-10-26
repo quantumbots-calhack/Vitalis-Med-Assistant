@@ -236,7 +236,10 @@ export default function ChatbotPage() {
           headers: {
             'Content-Type': 'application/json',
           },
-          body: JSON.stringify({ message: finalText }),
+          body: JSON.stringify({ 
+            message: finalText,
+            user_id: user?.id || null
+          }),
         });
 
         if (!response.ok) {
@@ -299,7 +302,10 @@ export default function ChatbotPage() {
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ message: currentInput }),
+        body: JSON.stringify({ 
+          message: currentInput,
+          user_id: user?.id || null
+        }),
       });
 
       if (!response.ok) {
@@ -446,7 +452,35 @@ export default function ChatbotPage() {
                           : 'bg-muted text-foreground'
                       }`}
                     >
-                      <p className="text-sm">{message.text}</p>
+                      <p className="text-sm whitespace-pre-wrap">
+                        {message.text.split('\n').map((line, lineIdx) => {
+                          // Check if the line contains a URL
+                          const urlRegex = /(https?:\/\/[^\s]+)/g;
+                          const parts = line.split(urlRegex);
+                          
+                          return (
+                            <span key={lineIdx}>
+                              {parts.map((part, partIdx) => {
+                                if (part.match(urlRegex)) {
+                                  return (
+                                    <a
+                                      key={partIdx}
+                                      href={part}
+                                      target="_blank"
+                                      rel="noopener noreferrer"
+                                      className="text-primary underline hover:text-primary/80 break-all"
+                                    >
+                                      {part}
+                                    </a>
+                                  );
+                                }
+                                return <span key={partIdx}>{part}</span>;
+                              })}
+                              {lineIdx < message.text.split('\n').length - 1 && <br />}
+                            </span>
+                          );
+                        })}
+                      </p>
                       <p className="text-xs opacity-70 mt-1">
                         {message.timestamp.toLocaleTimeString()}
                       </p>

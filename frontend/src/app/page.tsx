@@ -71,6 +71,8 @@ export default function Home() {
         router.push('/onboarding/basic');
       }
     }
+    // If not authenticated, stay on landing page (shows "Get Started" button)
+    // No automatic redirect - user must click "Get Started" to go to /auth
   }, [isAuthenticated, user, router]);
 
   return (

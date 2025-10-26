@@ -2,13 +2,13 @@ import os
 import sys
 from flask import Flask, request, jsonify
 from flask_cors import CORS
-from smolagents import OpenAIServerModel, CodeAgent
 from dotenv import load_dotenv
 from io import BytesIO
 import base64
 
-# Import individual tools from separate files
-from tools import track_med_history, search_med_history
+# Import shared agent configuration
+from agent import create_agent, get_prompt
+from tools.store_profile import get_patient_profile
 
 # Load environment variables
 load_dotenv()
@@ -26,44 +26,24 @@ except Exception as e:
     print(f"Warning: Could not initialize ElevenLabs client: {e}")
     elevenlabs_client = None
 
-# --- Model Setup ---
-model = OpenAIServerModel(
-    model_id="gemini-2.0-flash",
-    api_base="https://generativelanguage.googleapis.com/v1beta/openai/",
-    api_key=os.getenv("GEMINI_API_KEY"),
-)
-
-# --- Agent Setup ---
-agent = CodeAgent(
-    tools=[track_med_history, search_med_history],
-    model=model,
-    add_base_tools=True,
-    max_steps=5,
-)
+# Create the agent instance using shared configuration
+agent = create_agent()
 
 @app.route('/api/chat', methods=['POST'])
 def chat():
     try:
         data = request.json
         user_message = data.get('message', '').strip()
+        user_id = data.get('user_id')  # Get user_id from frontend
         
         if not user_message:
             return jsonify({'error': 'Message is required'}), 400
         
-        # Build the full prompt dynamically for each user message
-        prompt = f"""
-        You are an empathetic personal health assistant.
-        Your goal is to answer user questions based on their medical history, symptoms, and health conditions.
-        Use patient_001 as the patient_id.
-
-        Steps:
-        1. If the user asks for an opinion, use `search_med_history` to respond effectively based on medical history.
-        2. If the user mentions health conditions, medications, or symptoms, use `track_med_history` to record them (do not mention this to the user).
-        3. If no symptoms are mentioned, respond positively.
-        4. Always respond empathetically.
-
-        User Message: {user_message}
-        """
+        # Determine patient ID
+        patient_id = f"patient_{user_id}" if user_id else "patient_001"
+        
+        # Use the shared prompt function with patient_id
+        prompt = get_prompt(user_message, patient_id)
         
         # Run the agent
         result = agent.run(prompt)
@@ -119,6 +99,73 @@ def transcribe_audio():
         return jsonify({
             'transcription': text,
             'status': 'success'
+        })
+        
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/api/store-profile', methods=['POST'])
+def store_profile():
+    """Store patient profile data in ChromaDB for RAG"""
+    try:
+        from tools.store_profile import store_patient_profile
+        
+        data = request.json
+        patient_id = data.get('patient_id')
+        full_name = data.get('fullName')
+        age = data.get('age')
+        sex = data.get('sex')
+        # Handle both camelCase and snake_case field names
+        height_cm = data.get('height_cm') or data.get('heightCm')
+        weight_kg = data.get('weight_kg') or data.get('weightKg')
+        allergies = data.get('allergies', '')
+        medications = data.get('medications', '')
+        medical_history = data.get('medical_history') or data.get('history', '')
+        email = data.get('email', '')
+        
+        if not all([patient_id, full_name, age, sex, height_cm, weight_kg]):
+            return jsonify({'error': 'Missing required fields'}), 400
+        
+        # Store profile in ChromaDB
+        result = store_patient_profile(
+            patient_id=patient_id,
+            full_name=full_name,
+            age=age,
+            sex=sex,
+            height_cm=height_cm,
+            weight_kg=weight_kg,
+            allergies=allergies,
+            medications=medications,
+            medical_history=medical_history,
+            email=email
+        )
+        
+        return jsonify({
+            'status': 'success',
+            'message': 'Profile stored successfully'
+        })
+        
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/api/get-profile', methods=['POST'])
+def get_profile():
+    """Retrieve patient profile from ChromaDB"""
+    try:
+        from tools.store_profile import get_patient_profile
+        
+        data = request.json
+        patient_id = data.get('patient_id')
+        
+        if not patient_id:
+            return jsonify({'error': 'patient_id is required'}), 400
+        
+        # Get profile from ChromaDB
+        profile_data = get_patient_profile(patient_id)
+        
+        return jsonify({
+            'status': 'success',
+            'profile': profile_data
         })
         
     except Exception as e:

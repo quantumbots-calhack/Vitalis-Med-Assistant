@@ -31,7 +31,7 @@ interface MedicalFormProps {
 export default function MedicalForm({ className = '' }: MedicalFormProps) {
   const router = useRouter();
   const { getBasicData, getMedicalData, reset } = useOnboardingStore();
-  const { markOnboardingComplete } = useAuthStore();
+  const { markOnboardingComplete, user } = useAuthStore();
 
   // Initialize form with existing data if available
   const existingData = getMedicalData();
@@ -70,6 +70,32 @@ export default function MedicalForm({ className = '' }: MedicalFormProps) {
 
       // Save profile
       const result = await saveProfile(validatedData);
+
+      // Store profile in ChromaDB for RAG
+      try {
+        const patientId = user?.id ? `patient_${user.id}` : `patient_${result.id}`;
+        await fetch('http://localhost:5001/api/store-profile', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            patient_id: patientId,
+            fullName: validatedData.fullName,
+            email: user?.email || '',
+            age: validatedData.age,
+            sex: validatedData.sex,
+            height_cm: validatedData.heightCm,
+            weight_kg: validatedData.weightKg,
+            allergies: validatedData.allergies,
+            medications: validatedData.medications,
+            medical_history: validatedData.history
+          })
+        });
+      } catch (error) {
+        console.error('Failed to store profile in ChromaDB:', error);
+        // Don't block the onboarding flow if ChromaDB storage fails
+      }
 
       // Show success message
       toast.success('Profile saved successfully!', {
