@@ -37,23 +37,33 @@ def chat():
         user_message = data.get('message', '').strip()
         user_id = data.get('user_id')  # Get user_id from frontend
         
+        print(f"[CHAT] Received message: {user_message}")
+        print(f"[CHAT] User ID: {user_id}")
+        
         if not user_message:
             return jsonify({'error': 'Message is required'}), 400
         
         # Determine patient ID
         patient_id = f"patient_{user_id}" if user_id else "patient_001"
+        print(f"[CHAT] Using patient_id: {patient_id}")
         
         # Use the shared prompt function with patient_id
         prompt = get_prompt(user_message, patient_id)
         
+        print(f"[CHAT] Running agent...")
         # Run the agent
         result = agent.run(prompt)
+        
+        print(f"[CHAT] Agent response: {result}")
         
         return jsonify({
             'response': result
         })
         
     except Exception as e:
+        print(f"[CHAT ERROR] {str(e)}")
+        import traceback
+        traceback.print_exc()
         return jsonify({'error': str(e)}), 500
 
 @app.route('/api/transcribe', methods=['POST'])

@@ -41,7 +41,7 @@ export default function ChatbotPage() {
   const [messages, setMessages] = useState<Message[]>([
     {
       id: '1',
-      text: `Hello ${user?.name || 'there'}! I'm your medical assistant. How can I help you today?`,
+      text: `Hello ${user?.name || 'there'}! I'm your Vitalis medical assistant. How can I help you today?`,
       isUser: false,
       timestamp: new Date(),
     },
@@ -450,7 +450,7 @@ export default function ChatbotPage() {
         >
           <div>
             <h1 className="text-3xl font-bold text-foreground">
-              Medical Assistant Chat
+              Vitalis Chat
             </h1>
             <p className="text-muted-foreground">
               Welcome back, {user?.name}! Ask me anything about your health.

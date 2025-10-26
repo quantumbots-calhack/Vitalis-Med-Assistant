@@ -8,14 +8,20 @@ import CharacterGif from '@/components/CharacterGif';
 import SpeechBubble from '@/components/SpeechBubble';
 import LoginForm from '@/components/forms/LoginForm';
 import SignupForm from '@/components/forms/SignupForm';
+import { useAuthStore } from '@/lib/auth-store';
 
 export default function AuthPage() {
   const router = useRouter();
   const [isLogin, setIsLogin] = useState(true);
+  const { user } = useAuthStore();
 
   const handleAuthSuccess = () => {
-    // Redirect will be handled by middleware or layout
-    router.push('/');
+    // Check if user has completed onboarding
+    if (user?.hasCompletedOnboarding) {
+      router.push('/chatbot');
+    } else {
+      router.push('/onboarding/basic');
+    }
   };
 
   const containerVariants = {
@@ -55,6 +61,15 @@ export default function AuthPage() {
         initial="hidden"
         animate="visible"
       >
+        {/* Vitalis Header */}
+        <div className="flex items-center justify-center mb-12">
+          <img
+            src="/vitalis_logo.png"
+            alt="Vitalis Logo"
+            className="h-24 w-24"
+          />
+        </div>
+
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-12 items-start min-h-screen">
           {/* Left Column: Character with Speech Bubble */}
           <motion.div
@@ -64,8 +79,8 @@ export default function AuthPage() {
             <div className="flex flex-col items-center lg:items-start space-y-1">
               <SpeechBubble className="max-w-sm">
                 {isLogin
-                  ? "Welcome back! Let's get you signed in to continue your healthcare journey."
-                  : "Hello! Let's create your account so we can provide personalized medical assistance."}
+                  ? "Welcome back to Vitalis! Let's get you signed in to continue your healthcare journey."
+                  : "Hello! Let's create your Vitalis account so we can provide personalized medical assistance."}
               </SpeechBubble>
 
               <CharacterGif
