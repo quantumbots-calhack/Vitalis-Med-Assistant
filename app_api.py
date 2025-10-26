@@ -5,6 +5,7 @@ from flask_cors import CORS
 from dotenv import load_dotenv
 from io import BytesIO
 import base64
+import json
 
 # Import shared agent configuration
 from agent import create_agent, get_prompt
@@ -85,6 +86,7 @@ def transcribe_audio():
         audio_stream = BytesIO(audio_data)
         
         # Transcribe using ElevenLabs
+        print(f"[TRANSCRIBE] Starting transcription with ElevenLabs...")
         transcription = elevenlabs_client.speech_to_text.convert(
             file=audio_stream,
             model_id="scribe_v1",
@@ -93,8 +95,12 @@ def transcribe_audio():
             diarize=False,
         )
         
+        print(f"[TRANSCRIBE] Transcription response: {transcription}")
+        
         # Extract text from transcription
         text = transcription.text if hasattr(transcription, 'text') else str(transcription)
+        
+        print(f"[TRANSCRIBE] Extracted text: {text}")
         
         return jsonify({
             'transcription': text,
@@ -102,7 +108,11 @@ def transcribe_audio():
         })
         
     except Exception as e:
-        return jsonify({'error': str(e)}), 500
+        print(f"[TRANSCRIBE ERROR] Failed to transcribe audio: {str(e)}")
+        import traceback
+        print(f"[TRANSCRIBE ERROR] Traceback:")
+        traceback.print_exc()
+        return jsonify({'error': f'Failed to transcribe audio: {str(e)}'}), 500
 
 @app.route('/api/store-profile', methods=['POST'])
 def store_profile():
@@ -169,6 +179,72 @@ def get_profile():
         })
         
     except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/api/generate-email-draft', methods=['POST'])
+def generate_email_draft_endpoint():
+    """Generate an email draft using Gemini"""
+    try:
+        from tools.email_notification import generate_email_draft
+
+        data = request.json
+        patient_name = data.get('patient_name')
+        patient_age = data.get('patient_age')
+        symptom = data.get('symptom')
+        additional_context = data.get('additional_context')
+        patient_profile = data.get('patient_profile', {})
+
+        if not all([patient_name, patient_age, symptom]):
+            return jsonify({'error': 'Missing required fields'}), 400
+
+        result = generate_email_draft(
+            patient_name=patient_name,
+            patient_age=patient_age,
+            symptom=symptom,
+            additional_context=additional_context,
+            patient_profile=patient_profile
+        )
+
+        return jsonify({
+            'status': 'success',
+            'draft': json.loads(result)
+        })
+
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/api/send-email', methods=['POST'])
+def send_email_endpoint():
+    """Send email to doctor using Gmail API"""
+    try:
+        from tools.email_notification import send_email_to_doctor
+        
+        data = request.json
+        subject = data.get('subject')
+        body = data.get('body')
+        patient_email = data.get('patient_email')
+        
+        if not all([subject, body]):
+            return jsonify({'error': 'Missing required fields'}), 400
+        
+        print(f"[EMAIL DEBUG] Attempting to send email with subject: {subject}")
+        result = send_email_to_doctor(
+            subject=subject,
+            body=body,
+            patient_email=patient_email
+        )
+        
+        print(f"[EMAIL DEBUG] Email send result: {result}")
+        
+        return jsonify({
+            'status': 'success',
+            'result': json.loads(result)
+        })
+        
+    except Exception as e:
+        print(f"[EMAIL ERROR] Failed to send email: {str(e)}")
+        import traceback
+        traceback.print_exc()
         return jsonify({'error': str(e)}), 500
 
 @app.route('/api/health', methods=['GET'])
