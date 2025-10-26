@@ -9,6 +9,7 @@ import SpeechBubble from '@/components/SpeechBubble';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { useAuthStore } from '@/lib/auth-store';
+import EmailDialog from '@/components/EmailDialog';
 
 // Audio recording type definitions
 interface AudioRecorder {
@@ -55,6 +56,12 @@ export default function ChatbotPage() {
   const [mediaRecorder, setMediaRecorder] = useState<MediaRecorder | null>(null);
   const [transcript, setTranscript] = useState('');
   const [isTranscribing, setIsTranscribing] = useState(false);
+  
+  // Email dialog state
+  const [showEmailDialog, setShowEmailDialog] = useState(false);
+  const [emailSymptom, setEmailSymptom] = useState('');
+  const [patientProfile, setPatientProfile] = useState<any>(null);
+  const [lastNotificationMessageId, setLastNotificationMessageId] = useState<string | null>(null);
   
   // Ref for messages container
   const messagesEndRef = useRef<HTMLDivElement>(null);
@@ -173,6 +180,11 @@ export default function ChatbotPage() {
   // Transcribe audio using ElevenLabs
   const transcribeAudio = async (audioBlob: Blob) => {
     setIsTranscribing(true);
+    setIsTranscribing(false);
+    setTranscript('Speech-to-text is temporarily unavailable. Please type your message instead.');
+    alert('Speech-to-text is temporarily unavailable. Please type your message instead.');
+    return;
+    
     try {
       // Convert blob to base64
       const reader = new FileReader();
@@ -191,10 +203,23 @@ export default function ChatbotPage() {
           });
 
           if (!response.ok) {
-            throw new Error('Failed to transcribe audio');
+            // Get error details from response
+            const responseText = await response.text();
+            console.error('[TRANSCRIBE] Error response status:', response.status);
+            console.error('[TRANSCRIBE] Error response text:', responseText);
+            
+            let errorData = { error: 'Unknown error' };
+            try {
+              errorData = JSON.parse(responseText);
+            } catch (e) {
+              errorData = { error: responseText || 'Failed to transcribe audio' };
+            }
+            
+            throw new Error(errorData.error || `Failed to transcribe audio (${response.status})`);
           }
 
           const data = await response.json();
+          console.log('[TRANSCRIBE] Success response:', data);
           const transcribedText = data.transcription;
           
           setTranscript(transcribedText);
@@ -321,7 +346,30 @@ export default function ChatbotPage() {
         timestamp: new Date(),
       };
 
-      setMessages(prev => [...prev, botMessage]);
+      setMessages(prev => {
+        const updatedMessages = [...prev, botMessage];
+        
+        // Check if user responded "no" to email notification
+        if (currentInput.toLowerCase().trim() === 'no' && lastNotificationMessageId) {
+          // Clear the notification message ID so button disappears
+          setLastNotificationMessageId(null);
+        }
+        
+        return updatedMessages;
+      });
+      
+      // Check if response asks about severe symptoms and notify doctor
+      if (data.response.toLowerCase().includes('severe') && 
+          (data.response.toLowerCase().includes('notify') || data.response.toLowerCase().includes('doctor'))) {
+        // Extract symptom from user's message
+        const symptomWords = ['pain', 'headache', 'fever', 'cough', 'ache', 'hurt', 'sore', 'dizzy', 'nausea', 'rash'];
+        const foundSymptom = symptomWords.find(word => currentInput.toLowerCase().includes(word));
+        if (foundSymptom) {
+          setEmailSymptom(foundSymptom);
+        }
+        // Store this bot message ID so we can show button
+        setLastNotificationMessageId(botMessage.id);
+      }
     } catch (error) {
       console.error('Error sending message:', error);
       
@@ -487,6 +535,42 @@ export default function ChatbotPage() {
                     </div>
                   </div>
                 ))}
+                
+                {/* Check if last bot message asks about severe symptoms and notifying doctor */}
+                {messages.length > 0 && messages[messages.length - 1].id === lastNotificationMessageId && !showEmailDialog && (
+                  <div className="flex justify-center py-2">
+                    <Button
+                      onClick={async () => {
+                        // Fetch patient profile first
+                        try {
+                          const res = await fetch('http://localhost:5001/api/get-profile', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ patient_id: `patient_${user?.id}` })
+                          });
+                          const data = await res.json();
+                          if (data.status === 'success' && data.profile) {
+                            const profileData = JSON.parse(data.profile);
+                            setPatientProfile(profileData);
+                            // Now open the dialog
+                            setShowEmailDialog(true);
+                            // Clear the last notification message ID so button disappears
+                            setLastNotificationMessageId(null);
+                          }
+                        } catch (error) {
+                          console.error('Error fetching profile:', error);
+                          // Still open dialog with fallback data
+                          setShowEmailDialog(true);
+                          setLastNotificationMessageId(null);
+                        }
+                      }}
+                      className="bg-primary text-primary-foreground hover:bg-primary/90"
+                    >
+                      Yes, notify my doctor
+                    </Button>
+                  </div>
+                )}
+                
                 {isTyping && (
                   <div className="flex justify-start">
                     <div className="bg-muted text-foreground p-3 rounded-lg">
@@ -627,6 +711,20 @@ export default function ChatbotPage() {
           </motion.div>
         </div>
       </motion.div>
+      
+      {/* Email Dialog */}
+      <EmailDialog
+        isOpen={showEmailDialog}
+        onClose={() => setShowEmailDialog(false)}
+        patientName={patientProfile?.full_name || user?.name || 'Patient'}
+        patientAge={patientProfile?.age || 0}
+        symptom={emailSymptom}
+        userEmail={user?.email}
+        messages={messages}
+        setMessages={setMessages}
+        patientProfile={patientProfile}
+      />
+      
     </PageShell>
   );
 }
