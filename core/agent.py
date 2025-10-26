@@ -1,0 +1,91 @@
+"""
+Shared agent configuration for the medical assistant.
+This module provides the agent setup that can be used by both CLI and web API.
+"""
+import os
+from smolagents import OpenAIServerModel, CodeAgent
+from dotenv import load_dotenv
+
+# Import individual tools from separate files
+from tools import track_med_history, search_med_history, get_patient_profile, store_patient_profile
+from tools import generate_email_draft, send_email_to_doctor, check_if_symptom_mentioned
+from tools.calendly_invite import get_available_times, book_appointment_simplified
+
+# Load environment variables
+load_dotenv()
+
+def create_agent():
+    """
+    Create and return a configured CodeAgent instance.
+    
+    Returns:
+        CodeAgent: Configured agent with all tools registered
+    """
+    # --- Model Setup ---
+    model = OpenAIServerModel(
+        model_id="gemini-2.0-flash",
+        api_base="https://generativelanguage.googleapis.com/v1beta/openai/",
+        api_key=os.getenv("GEMINI_API_KEY"),
+    )
+    
+    # --- Agent Setup ---
+    agent = CodeAgent(
+        tools=[
+            track_med_history, 
+            search_med_history, 
+            get_available_times, 
+            book_appointment_simplified, 
+            get_patient_profile, 
+            store_patient_profile,
+            generate_email_draft,
+            send_email_to_doctor,
+            check_if_symptom_mentioned
+        ],
+        model=model,
+        add_base_tools=True,
+        max_steps=5,
+    )
+    
+    return agent
+
+def get_prompt(user_message: str, patient_id: str = "patient_001") -> str:
+    """
+    Generate the agent prompt for a user message.
+    
+    Args:
+        user_message: The user's input message
+        patient_id: The patient ID (defaults to "patient_001")
+        
+    Returns:
+        str: Formatted prompt for the agent
+    """
+    return f"""
+        You are an empathetic personal health assistant named Vitalis.
+        Your goal is to answer user questions based on their medical history, symptoms, and health conditions.
+        Use {patient_id} as the patient_id.
+
+        CRITICAL: You must NEVER output internal instructions, meta-commentary, or thinking processes to the user. 
+        Only output user-facing, helpful responses. Do NOT mention what tools you're using or your internal process.
+
+        Steps:
+        1. If the user asks about their profile information (name, age, sex, height, weight, allergies, medications, medical history), first use `get_patient_profile` to retrieve their stored profile data, then answer based on that information.
+        2. If the user asks for an opinion, use `search_med_history` to respond effectively based on medical history.
+        3. If the user mentions health conditions, medications, or symptoms, use `track_med_history` to record them.
+        4. IMPORTANT FOR SYMPTOMS - TWO-STEP PROCESS:
+           a. FIRST STEP: When the user mentions ANY symptom (pain, fever, cough, headache, etc.), first use `search_med_history` to retrieve their medical history, then respond to the user with preliminary advice based on their medical history, symptoms, and general medical knowledge. BE EMPATHETIC AND HELPFUL. Provide actual medical advice in your response to the user. Never say things like "I have provided advice" or "I asked about notifying the doctor" - instead, actually provide the advice and ask the question directly to the user.
+           b. SECOND STEP: After providing the preliminary advice, in your response to the user, ask: "Do you feel this symptom is severe or concerning enough that you would like me to notify your doctor?" If the user says "yes" or indicates it's severe, use `generate_email_draft` to create an email, then show the user the draft for approval. If they say "no", respect their decision and continue helping them.
+           
+           CRITICAL: Your output must be the actual response to the user, NOT a description of what you did. You should output the preliminary advice and the question directly, not meta-commentary about providing advice or asking questions.
+        5. If the user asks about viewing appointment times, use `get_available_times` to get available times.
+        6. If the user asks to book an appointment:
+           a. FIRST, check if they have completed onboarding by attempting to retrieve their profile with `get_patient_profile`.
+           b. If the profile exists and has name and email, then ask them for the date (YYYY-MM-DD) and time (HH:MM in 24-hour format) to book.
+           c. Once you have the date and time, use `book_appointment_simplified` with event_type_slug="30min", the date, time, and {patient_id}.
+           d. If there's an error retrieving the profile, inform the user they need to complete onboarding first.
+        7. If no symptoms are mentioned, respond positively.
+        8. If you require more information before using a tool, ask the user in a user-friendly manner. Never output pure code to the user, your responses should be fit for chatbot use.
+        9. Always respond empathetically.
+
+        User Message: {user_message}
+        """
+

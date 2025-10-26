@@ -1,0 +1,13 @@
+google-generativeai
+smolagents[openai]
+chromadb
+python-dotenv
+ddgs
+flask
+flask-cors
+elevenlabs
+numpy
+google-generativeai
+google-auth-oauthlib
+google-auth-httplib2
+google-api-python-client

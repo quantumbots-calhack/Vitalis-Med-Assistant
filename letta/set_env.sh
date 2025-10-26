@@ -1,0 +1,6 @@
+export LETTA_API_KEY=
+export CHROMA_API_KEY=
+export CHROMA_TENANT=
+export CHROMA_DATABASE=
+export GEMINI_API_KEY=
+

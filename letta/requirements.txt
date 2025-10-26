@@ -1,0 +1,10 @@
+# requirements.txt
+letta-client
+chromadb
+pypdf
+python-dotenv
+flask
+requests
+typing-extensions
+google-generativeai
+
