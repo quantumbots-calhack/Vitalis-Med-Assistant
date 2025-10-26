@@ -217,13 +217,12 @@ def format_booking_result(booking_data: Dict) -> str:
     
     # Format success message without emojis, nicely spaced
     lines = []
-    lines.append("Appointment booking URL generated successfully!\n")
+    lines.append("Your appointment booking link has been generated!\n")
     lines.append(f"Patient: {booking_data.get('invitee_name')}")
     lines.append(f"Email: {booking_data.get('invitee_email')}")
     lines.append(f"Time: {booking_data.get('start_time')}\n")
     lines.append(f"Booking URL:")
-    lines.append(f"{booking_data.get('booking_url')}\n")
-    lines.append(f"Instructions: {booking_data.get('instructions', 'Please visit the URL to complete the booking.')}")
+    lines.append(f"{booking_data.get('booking_url')}")
     
     return '\n'.join(lines)
 
@@ -450,14 +449,14 @@ def book_appointment_simplified(
             results = health_collection.get(ids=[profile_id], where={"type": "patient_profile"})
             
             if not results['documents'] or len(results['documents']) == 0:
-                return f"Error: No profile found for patient {patient_id}. Please complete onboarding first."
+                return "Error: Unable to retrieve your profile information. Please ensure you have completed the onboarding process by filling out your basic and medical information first."
             
             profile_data = json.loads(results['documents'][0])
             patient_name = profile_data.get('full_name')
             patient_email = profile_data.get('email')
             
             if not patient_name or not patient_email:
-                return "Error: Patient profile is missing name or email information."
+                return "Error: Your profile is missing required information (name or email). Please update your profile in the onboarding section."
                 
         except Exception as e:
             return f"Error: Failed to retrieve patient profile - {str(e)}"

@@ -58,13 +58,22 @@ export default function MedicalPage() {
     <>
       <MockModeBanner />
       <PageShell className="min-h-screen bg-gradient-to-br from-background to-muted/20">
-        <motion.div
-          className="container mx-auto px-4 py-8"
-          variants={containerVariants}
-          initial="hidden"
-          animate="visible"
-        >
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-12 items-start min-h-screen">
+      <motion.div
+        className="container mx-auto px-4 py-8"
+        variants={containerVariants}
+        initial="hidden"
+        animate="visible"
+      >
+        {/* Vitalis Header */}
+        <div className="flex items-center justify-center mb-8">
+          <img
+            src="/vitalis_logo.png"
+            alt="Vitalis Logo"
+            className="h-20 w-20"
+          />
+        </div>
+
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-12 items-start min-h-screen">
             {/* Left Column: Character with Speech Bubble */}
             <motion.div
               className="flex flex-col items-center lg:items-start space-y-6 order-2 lg:order-1"

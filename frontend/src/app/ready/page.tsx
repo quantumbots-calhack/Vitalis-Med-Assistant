@@ -113,76 +113,59 @@ export default function ReadyPage() {
           <div className="flex flex-col items-center space-y-2">
             <SpeechBubble className="max-w-md">
               All set—ready to go! 🚀 Click the chat icon to start talking with
-              your medical assistant.
+              your Vitalis assistant.
             </SpeechBubble>
 
-            {/* Character with orbiting icons */}
+            {/* Character with side chat button */}
             <div className="relative w-96 h-96 flex items-center justify-center">
-              {/* Orbit container */}
-              <motion.div
-                className="absolute inset-0 w-full h-full"
-                variants={
-                  shouldReduceMotion
-                    ? reducedMotionOrbitVariants
-                    : orbitVariants
-                }
-                animate="animate"
-                aria-hidden="true"
-              >
-                {/* Single orbit button positioned at the top */}
-                <div className="absolute top-0 left-1/2 transform -translate-x-1/2 -translate-y-1/2">
-                  <motion.div
-                    variants={
-                      shouldReduceMotion
-                        ? reducedMotionButtonVariants
-                        : orbitButtonVariants
-                    }
-                    animate="animate"
-                  >
-                    <Button
-                      variant="outline"
-                      size="lg"
-                      onClick={handleGoToChatbot}
-                      className="w-24 h-24 rounded-full border-2 border-primary/30 bg-background/80 backdrop-blur-sm hover:bg-primary/10 hover:border-primary/50 focus:ring-2 focus:ring-primary/20 focus:ring-offset-2"
-                      aria-label="Start chatting with medical assistant"
-                    >
-                      <svg
-                        width="24"
-                        height="24"
-                        viewBox="0 0 24 24"
-                        fill="none"
-                        stroke="currentColor"
-                        strokeWidth="2"
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        className="text-primary"
-                      >
-                        <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
-                        <path d="M13 8H7" />
-                        <path d="M17 12H7" />
-                      </svg>
-                    </Button>
-                  </motion.div>
-                </div>
-              </motion.div>
-
               {/* Character in the center */}
               <CharacterGif
                 pose={shouldReduceMotion ? 'idle' : 'celebrate'}
                 size={500}
                 ariaLabel="Assistant celebrating profile completion"
-                className="w-96 h-96"
+                className="w-96 h-96 transition-transform duration-300 hover:scale-105"
                 src="/sitting.gif"
               />
+
+              {/* Static chat button on the side */}
+              <motion.div
+                className="absolute top-0 right-0 transform translate-x-8 -translate-y-4"
+                whileHover={{ scale: 1.1, rotate: 5 }}
+                whileTap={{ scale: 0.95 }}
+              >
+                <Button
+                  variant="outline"
+                  size="lg"
+                  onClick={handleGoToChatbot}
+                  className="w-20 h-20 rounded-full border-2 border-primary/30 bg-background/90 backdrop-blur-sm hover:bg-primary hover:border-primary shadow-lg btn-hover-glow"
+                  aria-label="Start chatting with Vitalis"
+                >
+                  <svg
+                    width="24"
+                    height="24"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    className="text-primary"
+                  >
+                    <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
+                    <path d="M13 8H7" />
+                    <path d="M17 12H7" />
+                  </svg>
+                </Button>
+              </motion.div>
             </div>
           </div>
 
           <div className="space-y-6">
             <h1 className="text-4xl font-bold text-foreground">
-              Profile Complete!
+              Welcome to Vitalis!
             </h1>
             <p className="text-lg text-muted-foreground">
-              Thank you for completing your medical profile. We now have all the
+              Thank you for completing your profile. We now have all the
               information needed to provide you with personalized care
               recommendations and assistance.
             </p>

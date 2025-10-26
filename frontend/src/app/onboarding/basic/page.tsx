@@ -82,6 +82,15 @@ export default function BasicOnboarding() {
         initial="hidden"
         animate="visible"
       >
+        {/* Vitalis Header */}
+        <div className="flex items-center justify-center mb-8">
+          <img
+            src="/vitalis_logo.png"
+            alt="Vitalis Logo"
+            className="h-20 w-20"
+          />
+        </div>
+
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-12 items-start min-h-screen">
           {/* Left Column: Character with Speech Bubble */}
           <motion.div

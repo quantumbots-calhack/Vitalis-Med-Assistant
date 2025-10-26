@@ -14,13 +14,13 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: 'Medical Help Bot',
+  title: 'Vitalis - AI Medical Assistant',
   description: 'AI-powered medical assistance and patient onboarding platform',
-  keywords: ['medical', 'healthcare', 'AI', 'assistant', 'onboarding'],
-  authors: [{ name: 'Medical Help Bot Team' }],
+  keywords: ['medical', 'healthcare', 'AI', 'assistant', 'onboarding', 'Vitalis'],
+  authors: [{ name: 'Vitalis Team' }],
   robots: 'index, follow',
   openGraph: {
-    title: 'Medical Help Bot',
+    title: 'Vitalis - AI Medical Assistant',
     description:
       'AI-powered medical assistance and patient onboarding platform',
     type: 'website',
